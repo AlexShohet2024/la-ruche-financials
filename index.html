@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Ruche · Financial Model</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crimson:#C8102E;--crimson-dark:#9E0B22;--crimson-light:#fdf0f2;--crimson-mid:#f5c6ce;
+    --charcoal:#1c1c1c;--warm-white:#FAF8F5;--warm-mid:#F0EDE8;--warm-dark:#E0DBD4;
+    --text:#1A1A1A;--text-muted:#666;--text-light:#999;
+    --blue:#1A4A8A;--blue-light:#EBF1FA;--blue-mid:#B8D0EE;
+    --green:#1A6B3C;--green-light:#EAF5EE;
+    --amber:#9A5A10;--amber-light:#FEF3E2;--amber-mid:#F5C87A;
+    --purple:#5A2D8A;--purple-light:#F0EAF8;--purple-mid:#C4A8E8;
+    --red-light:#FEF0F0;--border:#E5E0D8;
+    --shadow:0 2px 12px rgba(0,0,0,0.06);--radius:10px;--radius-lg:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--warm-white);color:var(--text);min-height:100vh;font-size:15px;line-height:1.6;}
+
+  .site-header{background:var(--charcoal);padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,0.06);}
+  .logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#fff;letter-spacing:0.04em;}
+  .logo span{color:var(--crimson);}
+  .header-meta{font-size:11px;color:#aaa;letter-spacing:0.1em;text-transform:uppercase;}
+  .header-kpis{display:flex;gap:28px;}
+  .hkpi{text-align:right;}
+  .hkpi-val{font-size:15px;font-weight:500;color:#fff;}
+  .hkpi-val.crimson{color:var(--crimson);}
+  .hkpi-val.gold{color:var(--amber-mid);}
+  .hkpi-label{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.07em;}
+
+  .tab-bar{background:var(--charcoal);padding:0 40px;display:flex;gap:2px;border-bottom:1px solid rgba(255,255,255,0.06);overflow-x:auto;}
+  .tab-btn{padding:13px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;color:#bbb;background:transparent;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;}
+  .tab-btn:hover{color:#ccc;}
+  .tab-btn.active{color:#fff;border-bottom-color:var(--crimson);font-weight:500;}
+  .tab-num{display:inline-block;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.08);font-size:10px;line-height:18px;text-align:center;margin-right:7px;}
+  .tab-btn.active .tab-num{background:var(--crimson);color:#fff;}
+
+  .main{max-width:1100px;margin:0 auto;padding:40px 32px 80px;}
+  .section{display:none;}
+  .section.visible{display:block;animation:fadeIn 0.25s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .section-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--text);margin-bottom:6px;}
+  .section-subtitle{font-size:15px;color:var(--text-muted);line-height:1.7;margin-bottom:32px;}
+
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow);}
+  .metric-card{background:var(--warm-mid);border-radius:var(--radius);padding:16px 18px;border:1px solid var(--warm-dark);}
+  .metric-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;}
+  .metric-value{font-size:24px;font-weight:500;color:var(--text);line-height:1;}
+  .metric-sub{font-size:12px;color:var(--text-light);margin-top:4px;}
+
+  .grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}
+  .grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}
+
+  @media(max-width:800px){
+    .grid-4{grid-template-columns:repeat(2,1fr);}
+    .grid-3,.grid-2{grid-template-columns:1fr;}
+    .header-kpis{display:none;}
+    .main{padding:24px 16px 60px;}
+    .site-header,.tab-bar{padding:0 16px;}
+  }
+
+  .analogy{background:var(--blue-light);border-left:3px solid var(--blue);border-radius:0 var(--radius) var(--radius) 0;padding:16px 20px;font-size:14px;color:var(--blue);line-height:1.7;margin-bottom:28px;}
+  .callout{background:var(--amber-light);border-left:3px solid var(--amber);border-radius:0 var(--radius) var(--radius) 0;padding:14px 18px;font-size:13px;color:var(--amber);line-height:1.7;margin:16px 0;}
+  .callout-danger{background:var(--red-light);border-left:3px solid var(--crimson);color:var(--crimson-dark);}
+  .callout-success{background:var(--green-light);border-left:3px solid var(--green);color:var(--green);}
+  .callout-purple{background:var(--purple-light);border-left:3px solid var(--purple);color:var(--purple);}
+
+  .rev-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+  .rev-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+  .rev-card.heal::before{background:var(--crimson);}
+  .rev-card.live::before{background:var(--blue);}
+  .rev-card.work::before{background:var(--green);}
+  .rev-card.play::before{background:var(--amber);}
+  .rev-tag{display:inline-block;font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-bottom:8px;}
+  .tag-heal{background:var(--crimson-light);color:var(--crimson-dark);}
+  .tag-live{background:var(--blue-light);color:var(--blue);}
+  .tag-work{background:var(--green-light);color:var(--green);}
+  .tag-play{background:var(--amber-light);color:var(--amber);}
+  .rev-title{font-size:14px;font-weight:500;margin-bottom:6px;}
+  .rev-desc{font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px;}
+  .rev-number{font-family:'Playfair Display',serif;font-size:24px;font-weight:400;}
+  .rev-number.heal{color:var(--crimson);}
+  .rev-number.live{color:var(--blue);}
+  .rev-number.work{color:var(--green);}
+  .rev-number.play{color:var(--amber);}
+  .rev-sub{font-size:11px;color:var(--text-light);margin-top:2px;}
+
+  .slider-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--warm-mid);}
+  .slider-row:last-child{border-bottom:none;}
+  .slider-label{font-size:13px;color:var(--text-muted);min-width:200px;flex-shrink:0;}
+  .slider-val{font-size:14px;font-weight:500;color:var(--text);min-width:72px;text-align:right;flex-shrink:0;}
+  input[type=range]{flex:1;height:4px;-webkit-appearance:none;appearance:none;background:var(--warm-dark);border-radius:2px;outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--crimson);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2);transition:transform 0.1s;}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+  input[type=range].blue-thumb::-webkit-slider-thumb{background:var(--blue);}
+  input[type=range].green-thumb::-webkit-slider-thumb{background:var(--green);}
+  input[type=range].purple-thumb::-webkit-slider-thumb{background:var(--purple);}
+  input[type=range].amber-thumb::-webkit-slider-thumb{background:var(--amber);}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--crimson);cursor:pointer;border:none;}
+
+  .badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;flex-shrink:0;}
+  .badge-blue{background:var(--blue-light);color:var(--blue);}
+  .badge-green{background:var(--green-light);color:var(--green);}
+  .badge-amber{background:var(--amber-light);color:var(--amber);}
+  .badge-red{background:var(--crimson-light);color:var(--crimson-dark);}
+  .badge-purple{background:var(--purple-light);color:var(--purple);}
+
+  .bar-block{margin-bottom:14px;}
+  .bar-header{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:5px;}
+  .bar-header strong{color:var(--text);font-weight:500;}
+  .bar-track{height:10px;background:var(--warm-mid);border-radius:5px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:5px;transition:width 0.45s cubic-bezier(.4,0,.2,1);}
+
+  .flow-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .flow-box{flex:1;min-width:120px;text-align:center;background:var(--warm-mid);border-radius:var(--radius);padding:14px 10px;border:1px solid var(--warm-dark);}
+  .flow-box.highlight{background:var(--green-light);border-color:#a8d9bc;}
+  .flow-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;}
+  .flow-val{font-size:18px;font-weight:500;color:var(--text);}
+  .flow-val.green{color:var(--green);}
+  .flow-arrow{font-size:20px;color:var(--text-light);flex-shrink:0;}
+
+  .term-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:12px;box-shadow:var(--shadow);}
+  .term-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;}
+  .term-name{font-size:15px;font-weight:500;}
+  .term-amount{font-family:'Playfair Display',serif;font-size:22px;font-weight:400;white-space:nowrap;}
+  .term-bar-wrap{margin-bottom:10px;}
+  .term-def{font-size:13px;color:var(--text-muted);line-height:1.7;}
+
+  .val-layer{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 24px;box-shadow:var(--shadow);}
+  .val-layer-title{font-size:13px;font-weight:500;margin-bottom:6px;}
+  .val-formula{font-size:12px;color:var(--text-muted);font-family:monospace;background:var(--warm-mid);padding:8px 12px;border-radius:6px;margin-bottom:14px;line-height:1.8;}
+  .val-range{display:flex;gap:10px;}
+  .val-box{flex:1;text-align:center;border-radius:var(--radius);padding:12px;}
+
+  .ramp-row{display:flex;align-items:flex-end;height:140px;margin-bottom:10px;padding:0 8px;}
+  .ramp-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+  .ramp-num{font-size:13px;font-weight:500;margin-bottom:4px;}
+  .ramp-bar-wrap{width:60%;display:flex;align-items:flex-end;justify-content:center;height:100px;}
+  .ramp-bar{width:100%;border-radius:4px 4px 0 0;transition:height 0.5s ease;min-height:4px;}
+  .ramp-lbl{font-size:11px;color:var(--text-muted);margin-top:6px;}
+
+  .result-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px;}
+  hr{border:none;border-top:1px solid var(--border);margin:20px 0;}
+
+  .risk-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--warm-mid);}
+  .risk-item:last-child{border-bottom:none;}
+  .risk-rank{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0;margin-top:2px;}
+  .risk-rank.r1{background:#FDEDED;color:var(--crimson);}
+  .risk-rank.r2{background:var(--amber-light);color:var(--amber);}
+  .risk-rank.r3{background:var(--blue-light);color:var(--blue);}
+  .risk-title{font-size:14px;font-weight:500;margin-bottom:4px;}
+  .risk-body{font-size:13px;color:var(--text-muted);line-height:1.6;}
+
+  /* ── CAPITAL STACK ── */
+  .stack-visual{display:flex;height:200px;border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px;gap:2px;}
+  .stack-layer{display:flex;flex-direction:column;align-items:center;justify-content:center;transition:flex 0.5s ease;min-width:0;}
+  .stack-layer-label{font-size:11px;font-weight:500;text-align:center;padding:4px 8px;line-height:1.4;}
+  .stack-layer-pct{font-size:18px;font-weight:500;margin-top:2px;}
+  .stack-layer-amt{font-size:11px;opacity:0.8;margin-top:1px;}
+
+  .stack-table{width:100%;border-collapse:collapse;}
+  .stack-table th{font-size:11px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;}
+  .stack-table td{font-size:13px;padding:10px 12px;border-bottom:1px solid var(--warm-mid);}
+  .stack-table tr:last-child td{border-bottom:none;font-weight:500;}
+  .stack-table .num{text-align:right;font-variant-numeric:tabular-nums;}
+
+  .equity-note{font-size:12px;color:var(--text-muted);line-height:1.6;padding:10px 14px;background:var(--warm-mid);border-radius:var(--radius);margin-top:10px;}
+
+  .footer{background:var(--charcoal);color:#555;text-align:center;padding:20px 32px;font-size:11px;letter-spacing:0.04em;line-height:1.8;}
+  .total-bar{background:var(--charcoal);border-radius:var(--radius);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;margin-top:16px;}
+  .total-bar-label{font-size:13px;color:#aaa;}
+  .total-bar-value{font-family:'Playfair Display',serif;font-size:30px;font-weight:400;color:#fff;}
+  .total-bar-sub{font-size:11px;color:#666;margin-top:2px;}
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .pill{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:var(--warm-mid);color:var(--text-muted);}
+  .scroll-top{position:fixed;bottom:24px;right:24px;width:40px;height:40px;border-radius:50%;background:var(--charcoal);color:#fff;border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0.7;transition:opacity 0.2s;z-index:50;}
+  .scroll-top:hover{opacity:1;}
+  .live-badge{font-size:9px;background:var(--crimson-light);color:var(--crimson-dark);border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle;font-weight:500;letter-spacing:0.05em;}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <div class="logo">LA <span>RUCHE</span></div>
+    <div class="header-meta">Financial Model</div>
+  </div>
+  <div class="header-kpis">
+    <div class="hkpi">
+      <div class="hkpi-val crimson" id="hkpi-rev">$30.0M</div>
+      <div class="hkpi-label">Annual Revenue</div>
+    </div>
+    <div class="hkpi">
+      <div class="hkpi-val crimson" id="hkpi-ebitda">$11.5M</div>
+      <div class="hkpi-label">EBITDA (Year 3)</div>
+    </div>
+    <div class="hkpi">
+      <div class="hkpi-val" id="hkpi-dscr" style="color:#fff;">2.86×</div>
+      <div class="hkpi-label">DSCR</div>
+    </div>
+    <div class="hkpi">
+      <div class="hkpi-val gold" id="hkpi-ev">$182.2M – $211.5M</div>
+      <div class="hkpi-label">Enterprise Value</div>
+    </div>
+  </div>
+</header>
+
+<nav class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('big-picture',this)"><span class="tab-num">1</span>The Big Picture</button>
+  <button class="tab-btn" onclick="showTab('revenue',this)"><span class="tab-num">2</span>How Money Comes In</button>
+  <button class="tab-btn" onclick="showTab('expenses',this)"><span class="tab-num">3</span>Where It Goes</button>
+  <button class="tab-btn" onclick="showTab('profit',this)"><span class="tab-num">4</span>What's Left Over</button>
+  <button class="tab-btn" onclick="showTab('value',this)"><span class="tab-num">5</span>What It's Worth</button>
+  <button class="tab-btn" onclick="showTab('capital',this)"><span class="tab-num">6</span>Capital Stack</button>
+  <button class="tab-btn" onclick="showTab('sandbox',this)"><span class="tab-num">7</span>Play With It</button>
+</nav>
+
+<main class="main">
+
+<!-- ── SECTION 1: BIG PICTURE ── -->
+<section id="big-picture" class="section visible">
+  <h1 class="section-title">The Future of Living, Working, and Healing</h1>
+  <p class="section-subtitle">La Ruche is a premium, integrated living environment that brings together housing, behavioral health, wellness, and work into a single, purpose-built ecosystem. In West Hollywood, the model combines co-living, outpatient, and residential clinical services, clinical coworking spaces, and a curated wellness mall and AI platform that includes longevity, recovery, and performance offerings to support people at every stage of health and life. By aligning the environment, community, and care into a single asset, La Ruche replaces fragmented, episodic models with a continuous, experience-driven approach that improves outcomes while generating multiple complementary revenue streams. It is not a treatment center or a coworking space, but a new category of real estate that integrates AI to support living well, working effectively, and sustaining long-term recovery and performance.</p>
+
+  <div class="grid-4" style="margin-bottom:24px;">
+    <div class="rev-card heal">
+      <span class="rev-tag tag-heal">Heal</span>
+      <div class="rev-title">Treatment Clinic</div>
+      <div class="rev-desc">Up to 200 community members use insurance or pay privately for therapy, detox, and mental health programs.</div>
+      <div class="rev-number heal" id="bp-clinical-rev">$18.8M</div>
+      <div class="rev-sub">per year at full capacity</div>
+    </div>
+    <div class="rev-card live">
+      <span class="rev-tag tag-live">Live</span>
+      <div class="rev-title">Co-Living Apartments</div>
+      <div class="rev-desc">80 residents pay monthly rent for furnished, wellness-focused suites in West Hollywood.</div>
+      <div class="rev-number live" id="bp-coliving-rev">$3.3M</div>
+      <div class="rev-sub">per year at full occupancy</div>
+    </div>
+    <div class="rev-card work">
+      <span class="rev-tag tag-work">Work</span>
+      <div class="rev-title">Wellness Mall</div>
+      <div class="rev-desc">Therapists, doctors, and wellness providers rent clinical office space by the hour or month. Anchor brands may include Function Health, Equinox, CorePower Yoga, Next Health, and Remedy Place.</div>
+      <div class="rev-number work">$4.0M</div>
+      <div class="rev-sub">per year at stabilization</div>
+    </div>
+    <div class="rev-card play">
+      <span class="rev-tag tag-play">Play</span>
+      <div class="rev-title">Rooftop Social Club</div>
+      <div class="rev-desc">Members pay $2K–$10K/year for a rooftop pool, restaurant, events, and sober nightlife.</div>
+      <div class="rev-number play">$3.9M</div>
+      <div class="rev-sub">per year at full membership</div>
+    </div>
+  </div>
+
+  <div class="total-bar">
+    <div>
+      <div class="total-bar-label">Year 3 Stabilized — total annual revenue</div>
+      <div class="total-bar-sub">All numbers update live when you adjust sliders on any tab <span class="live-badge">LIVE</span></div>
+    </div>
+    <div style="text-align:right;"><div class="total-bar-value" id="bp-total-rev">$30.0M</div></div>
+  </div>
+
+  <div style="margin-top:28px;" class="card">
+    <div style="font-size:15px;font-weight:500;margin-bottom:14px;">Why build all four at once?</div>
+    <div class="grid-3">
+      <div>
+        <div style="font-size:13px;font-weight:500;margin-bottom:4px;">Lower cost to acquire customers</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.6;">A treatment member becomes a co-living resident becomes a club member. You only paid to find them once.</div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:500;margin-bottom:4px;">Better outcomes = better business</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.6;">When members live and socialize in the same ecosystem, recovery rates improve, which drives referrals and reputation.</div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:500;margin-bottom:4px;">If one revenue stream slows, others don't</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.6;">An insurance cut doesn't affect apartment rents. A slow membership month doesn't affect clinical revenue. Diversification protects the whole.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SECTION 2: REVENUE ── -->
+<section id="revenue" class="section">
+  <h1 class="section-title">How money comes in</h1>
+  <p class="section-subtitle">Every number starts with a simple assumption: how many people, paying how much. Use the sliders — changes update every tab in the model instantly.</p>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <span class="rev-tag tag-heal" style="margin:0;">Heal</span>
+      <div style="font-size:16px;font-weight:500;">Treatment clinic — the biggest revenue driver (63% of total)</div>
+    </div>
+    <div class="analogy" style="margin-bottom:16px;">Think of it like a hotel, except instead of tourists paying $300/night, each "guest" is a member paying $500–$1,200 per day — and most of that comes from their health insurance, not their own pocket.</div>
+    <div class="slider-row">
+      <span class="slider-label">Clinical occupancy rate</span>
+      <input type="range" min="0.3" max="1.0" value="1.0" step="0.05" id="r-occ" oninput="onRevenueSlider()">
+      <span class="slider-val" id="v-occ">100%</span>
+      <span class="badge badge-red">200 max clients</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Average daily rate per member</span>
+      <input type="range" min="400" max="1200" value="750" step="50" id="r-rate" oninput="onRevenueSlider()">
+      <span class="slider-val" id="v-rate">$750</span>
+      <span class="badge badge-amber">$400–$1,200</span>
+    </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--warm-mid);">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">The math: <span id="math-clinical" style="font-family:monospace;color:var(--text);">68 avg daily census × $750/day × 365 days = $18.75M</span></div>
+      <div style="font-size:22px;font-weight:500;color:var(--crimson);" id="result-clinical">$18.8M annual clinical revenue</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <span class="rev-tag tag-live" style="margin:0;">Live</span>
+      <div style="font-size:16px;font-weight:500;">Co-living apartments</div>
+    </div>
+    <div class="analogy" style="margin-bottom:16px;">Like renting 80 furnished rooms in a premium building. West Hollywood's average rent for a high-end furnished room runs $3,000–$4,000/month.</div>
+    <div class="slider-row">
+      <span class="slider-label">Residential occupancy rate</span>
+      <input type="range" min="0.4" max="1.0" value="1.0" step="0.05" id="r-res" oninput="onRevenueSlider()">
+      <span class="slider-val" id="v-res">100%</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Monthly rent per unit</span>
+      <input type="range" min="2000" max="5000" value="3438" step="100" id="r-rent" oninput="onRevenueSlider()">
+      <span class="slider-val" id="v-rent">$3,438</span>
+      <span class="badge badge-blue">WeHo market rate</span>
+    </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--warm-mid);">
+      <div style="font-size:22px;font-weight:500;color:var(--blue);" id="result-coliving">$3.3M annual rental revenue</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><span class="rev-tag tag-work" style="margin:0;">Work</span><div style="font-size:15px;font-weight:500;">Wellness mall</div></div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:14px;">25,000 sq ft of clinical offices, therapy rooms, a cafe, gym, and longevity suites. Providers rent space by the hour, day, or month. The model assumes $160/sq ft/year — a premium over standard West Hollywood office space, justified by the building's captive member population.</div>
+      <div style="font-size:22px;font-weight:500;color:var(--green);">$4.0M</div>
+      <div style="font-size:12px;color:var(--text-light);">at Year 3 stabilization (fixed)</div>
+      <div class="pill-row"><span class="pill">Fractional office leases</span><span class="pill">Provider memberships</span><span class="pill">Client subscriptions</span></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><span class="rev-tag tag-play" style="margin:0;">Play</span><div style="font-size:15px;font-weight:500;">Rooftop social club</div></div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:14px;">12,000–15,000 sq ft rooftop with a pool, restaurant, and event space. Membership-based with tiered pricing ($2K–$10K/year). The model assumes ~500 active members at an average of $5,000/year, plus food &amp; beverage adding another 35% on top.</div>
+      <div style="font-size:22px;font-weight:500;color:var(--amber);">$3.9M</div>
+      <div style="font-size:12px;color:var(--text-light);">at full membership (fixed)</div>
+      <div class="pill-row"><span class="pill">Annual memberships</span><span class="pill">Food &amp; beverage</span><span class="pill">Event hosting</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SECTION 3: EXPENSES ── -->
+<section id="expenses" class="section">
+  <h1 class="section-title">Where the money goes</h1>
+  <p class="section-subtitle">Every dollar coming in has to cover costs before anything is profit. Each expense line below has its own logic — clinical costs scale with how many members are in treatment, property costs scale with building occupancy, and debt service is set by the capital stack on Tab 6. All bars update automatically when you change any assumption.</p>
+
+  <div class="analogy" style="margin-bottom:28px;">Imagine a catering company. Fixed costs are the kitchen and the salaried chef — you pay those no matter how many events you book. Variable costs are ingredients — you only buy them when someone hires you. La Ruche is engineered to have mostly variable costs in the clinical business, so if occupancy drops 30%, costs drop nearly 30% too.</div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div style="font-size:15px;font-weight:500;margin-bottom:18px;">Expense breakdown — Year 3 Stabilized <span class="live-badge">LIVE</span></div>
+    <div id="expense-bars"></div>
+    <hr>
+    <div class="flow-row">
+      <div class="flow-box"><div class="flow-label">Total revenue</div><div class="flow-val" id="exp-total-rev">$30.0M</div></div>
+      <div class="flow-arrow">−</div>
+      <div class="flow-box"><div class="flow-label">Operating expenses</div><div class="flow-val" id="exp-total-exp">$18.5M</div></div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-box highlight"><div class="flow-label" style="color:var(--green);">EBITDA</div><div class="flow-val green" id="exp-ebitda">$11.5M</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;margin-bottom:10px;">Why "variable" clinical costs matter</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.7;">The therapists and clinicians at La Ruche are contracted per community member, not full-time salaried employees. That means:<br><br>&bull; At 50% capacity → clinical staffing costs drop ~50%<br>&bull; At 100% capacity → full costs, full revenue<br>&bull; No heavy fixed payroll in a slow month</div>
+      <div style="margin-top:12px;"><span class="badge badge-green" style="font-size:12px;padding:4px 12px;">Key financial engineering in the model</span></div>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;margin-bottom:10px;">The cost that never changes</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.7;">Debt service — the total annual payment on all loans — is fixed regardless of revenue. This is the floor every other part of the business must clear before any profit reaches investors.<br><br>The amount changes when you adjust the Capital Stack on Tab 6.</div>
+      <div class="callout" style="margin-top:12px;margin-bottom:0;">Biggest risk: revenue drops faster than variable costs can shrink, leaving insufficient cash to cover loan payments.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SECTION 4: PROFIT ── -->
+<section id="profit" class="section">
+  <h1 class="section-title">What's actually left over</h1>
+  <p class="section-subtitle">Finance uses multiple overlapping terms for "profit." All numbers here update live from any slider in the model.</p>
+
+  <div class="term-card">
+    <div class="term-header">
+      <div>
+        <div class="term-name">EBITDA &nbsp;<span class="badge badge-blue" id="profit-ebitda-badge">$11.5M at Year 3</span></div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:2px;">Earnings Before Interest, Taxes, Depreciation and Amortization</div>
+      </div>
+      <div style="text-align:right;"><div class="term-amount" style="color:var(--blue);" id="profit-ebitda-margin-text">38% margin</div></div>
+    </div>
+    <div class="term-bar-wrap">
+      <div class="bar-track"><div class="bar-fill" id="profit-ebitda-bar" style="width:38%;background:var(--blue);"></div></div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;" id="profit-ebitda-desc">$11.5M out of every $29.95M of revenue</div>
+    </div>
+    <div class="term-def">Think of it as your paycheck before taxes are taken out. It measures cash profit from running the business — before loan payments, taxes, or accounting write-downs.</div>
+  </div>
+
+  <div class="term-card">
+    <div class="term-header">
+      <div>
+        <div class="term-name">NOI — Net Operating Income &nbsp;<span class="badge badge-green">$7.0M (PropCo only)</span></div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:2px;">The real estate version of profit</div>
+      </div>
+      <div class="term-amount" style="color:var(--green);">78% margin</div>
+    </div>
+    <div class="term-bar-wrap">
+      <div class="bar-track"><div class="bar-fill" style="width:78%;background:var(--green);"></div></div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">$7.0M out of $9.0M in rents collected</div>
+    </div>
+    <div class="term-def">What the building earns from rents after property taxes, insurance, and maintenance — but before the mortgage. Rule of thumb: <strong>Value = NOI ÷ cap rate</strong>.</div>
+  </div>
+
+  <div class="term-card">
+    <div class="term-header">
+      <div>
+        <div class="term-name">Free Cash Flow &nbsp;<span class="badge badge-green" id="profit-fcf-badge">$7.5M at Year 3</span></div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:2px;">What's left after paying all loan obligations</div>
+      </div>
+    </div>
+    <div class="term-def">Money available to pay investors, reinvest, or distribute as dividends. Year 1 is tight because revenue is ramping up while all loan payments are already running. By Year 3 the gap widens significantly.</div>
+    <div style="margin-top:14px;">
+      <div class="ramp-row">
+        <div class="ramp-col">
+          <div class="ramp-num" id="profit-fcf-y1-num" style="color:var(--amber);">-$886K</div>
+          <div class="ramp-bar-wrap"><div class="ramp-bar" id="profit-fcf-y1-bar" style="height:6%;background:var(--amber-mid);"></div></div>
+          <div class="ramp-lbl">Year 1</div>
+        </div>
+        <div class="ramp-col">
+          <div class="ramp-num" id="profit-fcf-y2-num" style="color:var(--blue);">$4.1M</div>
+          <div class="ramp-bar-wrap"><div class="ramp-bar" id="profit-fcf-y2-bar" style="height:49%;background:var(--blue-mid);"></div></div>
+          <div class="ramp-lbl">Year 2</div>
+        </div>
+        <div class="ramp-col">
+          <div class="ramp-num" id="profit-fcf-y3-num" style="color:var(--green);">$7.5M</div>
+          <div class="ramp-bar-wrap"><div class="ramp-bar" id="profit-fcf-y3-bar" style="height:100%;background:#a8d9bc;"></div></div>
+          <div class="ramp-lbl">Year 3</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);text-align:center;">Free cash flow ramp — adjusts with capital stack changes <span class="live-badge">LIVE</span></div>
+    </div>
+  </div>
+
+  <div class="term-card">
+    <div class="term-header">
+      <div>
+        <div class="term-name">DSCR — Debt Service Coverage Ratio &nbsp;<span class="badge badge-green" id="profit-dscr-badge">2.86× at Year 3</span></div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:2px;">The bank's most important question</div>
+      </div>
+      <div class="term-amount" style="color:var(--green);" id="profit-dscr-val">2.86×</div>
+    </div>
+    <div class="term-def">DSCR answers: "Can you afford the loan payments?" A 2.86× DSCR means the business earns $2.86 for every $1.00 it owes. Banks require at least 1.25×. Adding mezzanine debt on Tab 6 increases total debt service and will lower this number — watch it here as you adjust the capital stack.</div>
+    <div style="margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;">
+      <div class="metric-card" style="background:var(--crimson-light);border-color:var(--crimson-mid);">
+        <div class="metric-label" style="color:var(--crimson-dark);">Below 1.0×</div>
+        <div style="font-size:18px;font-weight:500;color:var(--crimson);">Danger</div>
+        <div style="font-size:11px;color:var(--crimson-dark);">Can't cover the loans</div>
+      </div>
+      <div class="metric-card" style="background:var(--amber-light);border-color:var(--amber-mid);">
+        <div class="metric-label" style="color:var(--amber);">1.25× minimum</div>
+        <div style="font-size:18px;font-weight:500;color:var(--amber);">Acceptable</div>
+        <div style="font-size:11px;color:var(--amber);">Bank requirement</div>
+      </div>
+      <div class="metric-card" style="background:var(--green-light);border-color:#a8d9bc;">
+        <div class="metric-label" style="color:var(--green);" id="profit-dscr-card-label">2.86× here</div>
+        <div style="font-size:18px;font-weight:500;color:var(--green);" id="profit-dscr-card-val">Strong</div>
+        <div style="font-size:11px;color:var(--green);">Comfortable margin</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">Why does it take 3 years to reach full profitability? The clinical licensing process in California alone can take up to 6 to 12 months. You cannot earn clinical revenue until DHCS grants a license — that ramp-up is a regulatory requirement, not a business choice.</div>
+</section>
+
+<!-- ── SECTION 5: VALUE ── -->
+<section id="value" class="section">
+  <h1 class="section-title">What the whole thing is worth</h1>
+  <p class="section-subtitle">There are two completely separate ways to value La Ruche — one for the real estate, one for the operating businesses. All valuation numbers update live from any slider.</p>
+
+  <div class="analogy" style="margin-bottom:28px;">Imagine you own a McDonald's franchise in a prime location. The land and building are worth something on their own. But the franchise business is also worth something separately. La Ruche has exactly this two-layer structure.</div>
+
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="val-layer" style="border-top:3px solid var(--blue);">
+      <div class="val-layer-title" style="color:var(--blue);">Layer 1 — The real estate (PropCo)</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.7;">Real estate investors measure value using a "cap rate" — the annual return they expect. In West Hollywood, investors typically accept 5.5–6.0% annual returns on premium mixed-use assets.</div>
+      <div class="val-formula" id="val-propco-formula">Value = NOI ÷ cap rate<br>$7.0M ÷ 6.0% = $116.7M<br>$7.0M ÷ 5.5% = $127.3M</div>
+      <div class="val-range">
+        <div class="val-box" style="background:var(--blue-light);border:1px solid var(--blue-mid);">
+          <div style="font-size:11px;color:var(--blue);margin-bottom:4px;" id="val-cap1-label">6.0% cap rate</div>
+          <div style="font-size:22px;font-weight:500;color:var(--blue);" id="val-propco-low">$116.7M</div>
+        </div>
+        <div class="val-box" style="background:var(--blue-light);border:1px solid var(--blue-mid);">
+          <div style="font-size:11px;color:var(--blue);margin-bottom:4px;">5.5% cap rate</div>
+          <div style="font-size:22px;font-weight:500;color:var(--blue);" id="val-propco-high">$127.3M</div>
+        </div>
+      </div>
+    </div>
+    <div class="val-layer" style="border-top:3px solid var(--green);">
+      <div class="val-layer-title" style="color:var(--green);">Layer 2 — The operating businesses (OpCo)</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;line-height:1.7;">Operating businesses (healthcare clinics, hospitality clubs) are valued using an "EBITDA multiple" — buyers pay a lump sum equal to several years of annual profit. Healthcare and hospitality assets typically trade at 7–9×.</div>
+      <div class="val-formula" id="val-opco-formula">Value = EBITDA × multiple<br>$9.4M × 7 = $65.5M<br>$9.4M × 9 = $84.2M</div>
+      <div class="val-range">
+        <div class="val-box" style="background:var(--green-light);border:1px solid #a8d9bc;">
+          <div style="font-size:11px;color:var(--green);margin-bottom:4px;">7× multiple</div>
+          <div style="font-size:22px;font-weight:500;color:var(--green);" id="val-opco-low">$65.5M</div>
+        </div>
+        <div class="val-box" style="background:var(--green-light);border:1px solid #a8d9bc;">
+          <div style="font-size:11px;color:var(--green);margin-bottom:4px;">9× multiple</div>
+          <div style="font-size:22px;font-weight:500;color:var(--green);" id="val-opco-high">$84.2M</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="total-bar" style="margin-bottom:16px;">
+    <div>
+      <div class="total-bar-label">Combined enterprise value (PropCo + OpCo) <span class="live-badge">LIVE</span></div>
+      <div class="total-bar-sub">on a total investment of $78.5M</div>
+    </div>
+    <div style="text-align:right;"><div class="total-bar-value" id="val-total">$182.2M – $211.5M</div></div>
+  </div>
+
+  <div class="callout" style="margin-bottom:14px;"><strong>Why the original numbers seemed to conflict:</strong> The business plan said $115M–$140M (real estate only). The source deck said $150M–$165M (real estate after 4 years of appreciation). Both were technically correct — just different things at different points in time. The reconciled model separates them explicitly.</div>
+
+  <div class="card">
+    <div style="font-size:15px;font-weight:500;margin-bottom:14px;">How investors get their money back <span class="live-badge">LIVE</span></div>
+    <div class="grid-3">
+      <div style="padding:14px;background:var(--warm-mid);border-radius:var(--radius);">
+        <div style="font-size:12px;font-weight:500;margin-bottom:6px;">Common equity invested</div>
+        <div style="font-size:24px;font-weight:500;" id="val-equity-invested">$29.0M</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;" id="val-equity-pct">37% of total project cost</div>
+      </div>
+      <div style="padding:14px;background:var(--warm-mid);border-radius:var(--radius);">
+        <div style="font-size:12px;font-weight:500;margin-bottom:6px;">Net equity at exit (Year 7)</div>
+        <div style="font-size:24px;font-weight:500;color:var(--green);" id="val-net-equity">$139.7M – $169.0M</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">After paying off remaining debt</div>
+      </div>
+      <div style="padding:14px;background:var(--warm-mid);border-radius:var(--radius);">
+        <div style="font-size:12px;font-weight:500;margin-bottom:6px;">Equity multiple (7-year hold)</div>
+        <div style="font-size:24px;font-weight:500;color:var(--blue);" id="val-em">4.8× – 5.8×</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Common equity return</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SECTION 6: CAPITAL STACK ── -->
+<section id="capital" class="section">
+  <h1 class="section-title">Capital Stack</h1>
+  <p class="section-subtitle">The capital stack is how the $78.5M total project cost is financed. Drag the sliders to change the mix of senior debt, mezzanine, and common equity — and watch how it changes debt service, DSCR, and investor returns across every tab.</p>
+
+  <div class="analogy" style="margin-bottom:24px;">
+    Think of it like buying a house with three different lenders. The bank (senior debt) lends you the most at the lowest rate but gets paid first if anything goes wrong. A second lender (mezzanine) charges a higher rate because they take more risk. You put in the rest yourself (common equity) — and you get all the upside if the investment succeeds, but you're last in line if it fails.
+  </div>
+
+  <!-- VISUAL STACK BAR -->
+  <div class="card" style="margin-bottom:16px;">
+    <div style="font-size:14px;font-weight:500;margin-bottom:14px;">Capital structure — $78.5M total project cost <span class="live-badge">LIVE</span></div>
+    <div class="stack-visual" id="stack-visual">
+      <div class="stack-layer" id="sl-senior" style="flex:63;background:#1A4A8A;">
+        <div class="stack-layer-label" style="color:#fff;">Senior Debt</div>
+        <div class="stack-layer-pct" style="color:#B8D0EE;" id="sv-senior-pct">63%</div>
+        <div class="stack-layer-amt" style="color:#B8D0EE;" id="sv-senior-amt">$49.5M</div>
+      </div>
+      <div class="stack-layer" id="sl-mezz" style="flex:0;background:#5A2D8A;min-width:0;">
+        <div class="stack-layer-label" style="color:#fff;font-size:10px;">Mezz</div>
+        <div class="stack-layer-pct" style="color:#C4A8E8;font-size:14px;" id="sv-mezz-pct">0%</div>
+        <div class="stack-layer-amt" style="color:#C4A8E8;" id="sv-mezz-amt">$0</div>
+      </div>
+      <div class="stack-layer" id="sl-equity" style="flex:37;background:#C8102E;">
+        <div class="stack-layer-label" style="color:#fff;">Common Equity</div>
+        <div class="stack-layer-pct" style="color:#f5c6ce;" id="sv-equity-pct">37%</div>
+        <div class="stack-layer-amt" style="color:#f5c6ce;" id="sv-equity-amt">$29.0M</div>
+      </div>
+    </div>
+
+    <!-- SLIDERS -->
+    <div class="slider-row">
+      <span class="slider-label" style="color:var(--blue);font-weight:500;">Senior debt (% of project cost)</span>
+      <input type="range" class="blue-thumb" min="40" max="75" value="63" step="1" id="c-senior" oninput="onCapitalSlider()">
+      <span class="slider-val" id="cv-senior">63%</span>
+      <span class="badge badge-blue">$<span id="cv-senior-amt">49.5</span>M</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label" style="color:var(--purple);font-weight:500;">Mezzanine / preferred equity (%)</span>
+      <input type="range" class="purple-thumb" min="0" max="20" value="0" step="1" id="c-mezz" oninput="onCapitalSlider()">
+      <span class="slider-val" id="cv-mezz">0%</span>
+      <span class="badge badge-purple">$<span id="cv-mezz-amt">0.0</span>M</span>
+    </div>
+    <div class="slider-row" style="background:var(--warm-mid);border-radius:var(--radius);padding:10px 12px;border-bottom:none;">
+      <span class="slider-label" style="color:var(--crimson);font-weight:500;">Common equity (auto-calculated)</span>
+      <div style="flex:1;"></div>
+      <span class="slider-val" style="color:var(--crimson);" id="cv-equity-pct">37%</span>
+      <span class="badge badge-red">$<span id="cv-equity-amt">29.0</span>M to raise</span>
+    </div>
+  </div>
+
+  <!-- RATE SLIDERS -->
+  <div class="card" style="margin-bottom:16px;">
+    <div style="font-size:14px;font-weight:500;margin-bottom:14px;">Interest rates on each layer</div>
+    <div class="slider-row">
+      <span class="slider-label" style="color:var(--blue);">Senior debt interest rate</span>
+      <input type="range" class="blue-thumb" min="4.5" max="9.0" value="6.5" step="0.25" id="c-senior-rate" oninput="onCapitalSlider()">
+      <span class="slider-val" id="cv-senior-rate">6.50%</span>
+      <span class="badge badge-blue">25-yr amortization</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label" style="color:var(--purple);">Mezzanine interest rate</span>
+      <input type="range" class="purple-thumb" min="8.0" max="16.0" value="12.0" step="0.5" id="c-mezz-rate" oninput="onCapitalSlider()">
+      <span class="slider-val" id="cv-mezz-rate">12.0%</span>
+      <span class="badge badge-purple">interest-only</span>
+    </div>
+    <div class="equity-note">Mezzanine debt is interest-only — you pay only the annual interest, not the principal, until the loan matures. This keeps annual cash payments lower but means the full loan amount is still owed at exit. Senior debt is amortizing — each payment reduces the principal balance over 25 years.</div>
+  </div>
+
+  <!-- DEBT SERVICE BREAKDOWN TABLE -->
+  <div class="card" style="margin-bottom:16px;">
+    <div style="font-size:14px;font-weight:500;margin-bottom:14px;">Annual debt service breakdown <span class="live-badge">LIVE</span></div>
+    <table class="stack-table">
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th class="num">Amount</th>
+          <th class="num">Rate</th>
+          <th class="num">Annual Payment</th>
+          <th class="num">Type</th>
+        </tr>
+      </thead>
+      <tbody id="debt-service-table">
+        <tr>
+          <td style="color:var(--blue);font-weight:500;">Senior debt</td>
+          <td class="num" id="dst-senior-amt">$49.5M</td>
+          <td class="num" id="dst-senior-rate">6.50%</td>
+          <td class="num" id="dst-senior-pmt">$4.0M</td>
+          <td class="num" style="color:var(--text-muted);">Amortizing</td>
+        </tr>
+        <tr>
+          <td style="color:var(--purple);font-weight:500;">Mezzanine</td>
+          <td class="num" id="dst-mezz-amt">$0</td>
+          <td class="num" id="dst-mezz-rate">12.0%</td>
+          <td class="num" id="dst-mezz-pmt">$0</td>
+          <td class="num" style="color:var(--text-muted);">Interest-only</td>
+        </tr>
+        <tr style="border-top:2px solid var(--border);">
+          <td style="font-weight:500;">Total debt service</td>
+          <td class="num" id="dst-total-debt">$49.5M</td>
+          <td class="num">—</td>
+          <td class="num" id="dst-total-pmt" style="color:var(--crimson);">$4.0M</td>
+          <td class="num">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- IMPACT METRICS -->
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;margin-bottom:14px;">Impact on returns <span class="live-badge">LIVE</span></div>
+      <div class="result-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total debt service</div>
+          <div class="metric-value" id="cap-debtSvc">$4.0M</div>
+          <div class="metric-sub">per year (fixed)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">DSCR (Year 3)</div>
+          <div class="metric-value" id="cap-dscr">2.86×</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Free cash flow</div>
+          <div class="metric-value" id="cap-fcf">$7.5M</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Equity to raise</div>
+          <div class="metric-value" id="cap-equity">$29.0M</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;margin-bottom:14px;">What today's market actually lends</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.7;">
+        For a complex mixed-use project with a behavioral health component in 2026, realistic lending parameters are:<br><br>
+        &bull; <strong style="color:var(--blue);">Senior LTC: 50–60%</strong> from a traditional bank<br>
+        &bull; <strong style="color:var(--purple);">Mezzanine: 10–15%</strong> from a debt fund at 10–14%<br>
+        &bull; <strong style="color:var(--crimson);">Common equity: 25–40%</strong> from investors<br><br>
+        The original model assumed 63% senior with no mezz — achievable, but optimistic for this asset type. Try setting senior to 55% and mezz to 8% to model a more conservative capital stack and see how DSCR and returns change.
+      </div>
+      <div id="cap-warning" class="callout callout-danger" style="display:none;margin-top:10px;margin-bottom:0;">DSCR has fallen below 1.25×. This capital structure would not qualify for a standard commercial loan.</div>
+      <div id="cap-ok" class="callout callout-success" style="margin-top:10px;margin-bottom:0;">DSCR is <strong id="cap-dscr-inline">2.86×</strong> — this capital structure passes standard lender requirements.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SECTION 7: SANDBOX ── -->
+<section id="sandbox" class="section">
+  <h1 class="section-title">Play with the assumptions</h1>
+  <p class="section-subtitle">Move any slider — every number on every tab updates instantly. Expenses now calculate automatically from individual line-item logic, not a single ratio. This is the master control panel for the entire model.</p>
+
+  <div class="grid-2" style="margin-bottom:16px;align-items:start;">
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;margin-bottom:4px;">Revenue assumptions</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Also adjustable on Tab 2</div>
+      <div class="slider-row">
+        <span class="slider-label">Clinical occupancy rate</span>
+        <input type="range" min="0.3" max="1.0" value="1.0" step="0.05" id="s-occ" oninput="onSandboxSlider()">
+        <span class="slider-val" id="sv-occ">100%</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">Average daily member rate</span>
+        <input type="range" min="400" max="1200" value="750" step="50" id="s-adr" oninput="onSandboxSlider()">
+        <span class="slider-val" id="sv-adr">$750</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">Residential occupancy</span>
+        <input type="range" min="0.4" max="1.0" value="1.0" step="0.05" id="s-res" oninput="onSandboxSlider()">
+        <span class="slider-val" id="sv-res">100%</span>
+      </div>
+      <div style="font-size:14px;font-weight:500;margin:16px 0 4px;">Capital &amp; valuation</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Also adjustable on Tab 6</div>
+      <div class="slider-row">
+        <span class="slider-label">Senior LTC %</span>
+        <input type="range" class="blue-thumb" min="40" max="75" value="63" step="1" id="s-senior" oninput="onSandboxSlider()">
+        <span class="slider-val" id="sv-senior">63%</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">Mezzanine %</span>
+        <input type="range" class="purple-thumb" min="0" max="20" value="0" step="1" id="s-mezz" oninput="onSandboxSlider()">
+        <span class="slider-val" id="sv-mezz">0%</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">PropCo cap rate (exit)</span>
+        <input type="range" class="amber-thumb" min="0.045" max="0.080" value="0.060" step="0.005" id="s-cap" oninput="onSandboxSlider()">
+        <span class="slider-val" id="sv-cap">6.0%</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="result-grid">
+        <div class="metric-card"><div class="metric-label">Total revenue</div><div class="metric-value" id="s-rev">$30.0M</div></div>
+        <div class="metric-card"><div class="metric-label">EBITDA</div><div class="metric-value" id="s-ebitda">$11.5M</div></div>
+        <div class="metric-card"><div class="metric-label">EBITDA margin</div><div class="metric-value" id="s-margin">38%</div></div>
+        <div class="metric-card"><div class="metric-label">Free cash flow</div><div class="metric-value" id="s-fcf">$7.5M</div></div>
+      </div>
+      <div class="result-grid">
+        <div class="metric-card"><div class="metric-label">DSCR</div><div class="metric-value" id="s-dscr-val">2.86×</div></div>
+        <div class="metric-card"><div class="metric-label">Debt service</div><div class="metric-value" id="s-debt-svc">$4.0M</div></div>
+      </div>
+      <div class="metric-card" style="margin-bottom:10px;">
+        <div class="metric-label">PropCo value (NOI ÷ cap rate)</div>
+        <div class="metric-value" id="s-propco">$116.7M</div>
+        <div class="metric-sub" id="s-noi-note">Based on $7.0M NOI</div>
+      </div>
+      <div class="metric-card" style="margin-bottom:10px;">
+        <div class="metric-label">Common equity to raise</div>
+        <div class="metric-value" id="s-equity">$29.0M</div>
+        <div class="metric-sub" id="s-equity-note">37% of $78.5M total cost</div>
+      </div>
+      <div id="s-warning" class="callout callout-danger" style="display:none;margin:0;">At these settings, free cash flow goes negative or DSCR falls below 1.25×. The loan cannot be covered.</div>
+      <div id="s-ok" class="callout callout-success" style="margin:0;">DSCR is <strong id="s-dscr">2.86×</strong> — loan payments are comfortably covered.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:15px;font-weight:500;margin-bottom:4px;">The four assumptions that matter most</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Drag any of these down and watch what breaks first.</div>
+    <div class="risk-item">
+      <div class="risk-rank r1">1</div>
+      <div>
+        <div class="risk-title">Clinical occupancy</div>
+        <div class="risk-body">The clinic is 63% of total revenue. If occupancy stays below 70% — which can happen during early licensing, in slow referral networks, or due to insurance denials — free cash flow turns negative. Drag clinical occupancy to 65% and watch the DSCR fall.</div>
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-rank r2">2</div>
+      <div>
+        <div class="risk-title">Average daily rate from insurance</div>
+        <div class="risk-body">If insurance companies push the rate from $750/day to $500/day, realistic for Medi-Cal or lower-tier plans, clinical revenue falls by $6.25M, wiping out nearly the entire profit margin. Private-pay members at $2,000+/day are the premium that protects the model.</div>
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-rank r2">3</div>
+      <div>
+        <div class="risk-title">Mezzanine debt cost</div>
+        <div class="risk-body">Adding mezzanine debt to reach a higher LTC increases annual debt service significantly. At 12% interest-only on $10M of mezz, that's $1.2M more in fixed annual payments regardless of revenue. Try setting senior to 55% and mezz to 10% to see the impact on DSCR.</div>
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-rank r3">4</div>
+      <div>
+        <div class="risk-title">Time to stabilization</div>
+        <div class="risk-body">Every month of delay in getting licensed or reaching full occupancy costs approximately $500K in projected revenue, while all loan payments keep running. A 6-month slip in the licensing timeline adds $3M in cumulative cash burn before the first clinical dollar is earned.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div>La Ruche · Financial Model · West Hollywood, California</div>
+  <div></div>
+  <div style="margin-top:4px;">For discussion purposes only. Projections are subject to operational assumptions and market conditions. Not investment advice.</div>
+</footer>
+
+<button class="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+// ─── SINGLE COMPUTE ENGINE ────────────────────────────────────────────────────
+const TOTAL_COST = 78500000;
+
+function getInputs() {
+  return {
+    occ:        parseFloat(document.getElementById('s-occ').value),
+    adr:        parseInt(document.getElementById('s-adr').value),
+    res:        parseFloat(document.getElementById('s-res').value),
+    rent:       parseInt(document.getElementById('r-rent').value),
+    cap:        parseFloat(document.getElementById('s-cap').value),
+    seniorPct:  parseInt(document.getElementById('c-senior').value) / 100,
+    mezzPct:    parseInt(document.getElementById('c-mezz').value) / 100,
+    seniorRate: parseFloat(document.getElementById('c-senior-rate').value) / 100,
+    mezzRate:   parseFloat(document.getElementById('c-mezz-rate').value) / 100,
+  };
+}
+
+function annuity(principal, annualRate, years) {
+  if (principal <= 0) return 0;
+  const r = annualRate / 12;
+  const n = years * 12;
+  const monthly = principal * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+  return monthly * 12;
+}
+
+function computeModel(i) {
+  // CAPITAL STRUCTURE
+  const equityPct   = Math.max(0, 1 - i.seniorPct - i.mezzPct);
+  const seniorAmt   = TOTAL_COST * i.seniorPct;
+  const mezzAmt     = TOTAL_COST * i.mezzPct;
+  const equityAmt   = TOTAL_COST * equityPct;
+
+  const seniorPmt   = annuity(seniorAmt, i.seniorRate, 25);
+  const mezzPmt     = mezzAmt * i.mezzRate; // interest only
+  const totalDebtSvc = seniorPmt + mezzPmt;
+
+  // REVENUE
+  const clinicalRev = 18750000 * i.occ * (i.adr / 750);
+  const colivingRev = 80 * i.rent * 12 * i.res;
+  const platformRev = 7900000;
+  const totalRev    = clinicalRev + colivingRev + platformRev;
+
+  // EXPENSES — Option B: each line item has its own logic
+  // Clinical staffing: 45% of clinical revenue (fully variable — contracted clinicians scale with census)
+  const expClinStaff    = clinicalRev * 0.45;
+  // Clinical overhead: 20% of clinical revenue — medical supplies, EMR, malpractice insurance, clinical admin
+  // This was implicitly bundled in the prior expense ratio model; now shown explicitly
+  const expClinOverhead = clinicalRev * 0.20;
+  // Property operations: fixed base (taxes, insurance) + variable maintenance that scales with residential occ
+  const expPropOps      = 1200000 + (800000 * i.res);
+  // Wellness & platform operations: 35% of platform revenue (scales with platform activity)
+  const expPlatform     = platformRev * 0.35;
+  // G&A, compliance, technology: fixed base + small clinical compliance component
+  const expGnA          = 800000 + (250000 * i.occ);
+  // Marketing & admissions: 2.5% of clinical revenue (scales with how many members are being brought in)
+  const expMarketing    = clinicalRev * 0.025;
+  // Debt service: driven entirely by capital stack sliders (already computed above)
+  const expDebtSvc      = totalDebtSvc;
+
+  const totalExp = expClinStaff + expClinOverhead + expPropOps + expPlatform + expGnA + expMarketing + expDebtSvc;
+  const ebitda   = totalRev - (totalExp - expDebtSvc); // EBITDA excludes debt service by definition
+  const margin   = totalRev > 0 ? ebitda / totalRev : 0;
+  const fcf      = ebitda - totalDebtSvc;
+  const dscr     = totalDebtSvc > 0 ? ebitda / totalDebtSvc : 0;
+
+  // RAMP (approximate Year 1 and Year 2 using same cost structure at lower occupancy)
+  const y1ClinRev  = clinicalRev * 0.40;
+  const y1ColRev   = 80 * i.rent * 12 * i.res * 0.60;
+  const y1PlatRev  = platformRev * 0.25;
+  const y1Rev      = y1ClinRev + y1ColRev + y1PlatRev;
+  const y1Expenses = (y1ClinRev*0.45) + (y1ClinRev*0.20) + (1200000 + 800000*(i.res*0.60)) + (y1PlatRev*0.35) + (800000 + 250000*(i.occ*0.40)) + (y1ClinRev*0.025);
+  const y1FCF      = y1Rev - y1Expenses - totalDebtSvc;
+
+  const y2ClinRev  = clinicalRev * 0.75;
+  const y2ColRev   = 80 * i.rent * 12 * i.res * 0.85;
+  const y2PlatRev  = platformRev * 0.70;
+  const y2Rev      = y2ClinRev + y2ColRev + y2PlatRev;
+  const y2Expenses = (y2ClinRev*0.45) + (y2ClinRev*0.20) + (1200000 + 800000*(i.res*0.85)) + (y2PlatRev*0.35) + (800000 + 250000*(i.occ*0.75)) + (y2ClinRev*0.025);
+  const y2FCF      = y2Rev - y2Expenses - totalDebtSvc;
+
+  // PROPCO
+  const propcoNOI   = 2800000*i.occ*(i.adr/750) + 4200000*i.res;
+  const propcoVal   = propcoNOI / i.cap;
+  const propcoValHi = propcoNOI / 0.055;
+
+  // OPCO
+  const opcoEBITDA  = ebitda * 0.815;
+  const opcoValLow  = opcoEBITDA * 7;
+  const opcoValHigh = opcoEBITDA * 9;
+
+  const totalValLow  = propcoVal   + opcoValLow;
+  const totalValHigh = propcoValHi + opcoValHigh;
+
+  // EXIT returns to common equity
+  // Remaining debt balance at year 7 (senior amortized, mezz still full balance)
+  const seniorBal7 = seniorAmt > 0 ? seniorAmt * (Math.pow(1+i.seniorRate/12,25*12) - Math.pow(1+i.seniorRate/12,7*12)) / (Math.pow(1+i.seniorRate/12,25*12)-1) : 0;
+  const exitDebt   = seniorBal7 + mezzAmt;
+  const netEqLow   = totalValLow  - exitDebt;
+  const netEqHigh  = totalValHigh - exitDebt;
+  const emLow      = equityAmt > 0 ? netEqLow  / equityAmt : 0;
+  const emHigh     = equityAmt > 0 ? netEqHigh / equityAmt : 0;
+
+  return {
+    clinicalRev, colivingRev, platformRev, totalRev,
+    expClinStaff, expClinOverhead, expPropOps, expPlatform, expGnA, expMarketing, expDebtSvc,
+    totalExp, ebitda, margin, fcf, dscr,
+    y1FCF, y2FCF, totalDebtSvc,
+    seniorAmt, mezzAmt, equityAmt, equityPct,
+    seniorPmt, mezzPmt,
+    propcoNOI, propcoVal, propcoValHi,
+    opcoEBITDA, opcoValLow, opcoValHigh,
+    totalValLow, totalValHigh,
+    netEqLow, netEqHigh, emLow, emHigh
+  };
+}
+
+function fmt(n) {
+  const abs=Math.abs(n), sign=n<0?'-':'';
+  if(abs>=1e9) return sign+'$'+(abs/1e9).toFixed(1)+'B';
+  if(abs>=1e6) return sign+'$'+(abs/1e6).toFixed(1)+'M';
+  if(abs>=1e3) return sign+'$'+Math.round(abs/1e3)+'K';
+  return sign+'$'+Math.round(abs);
+}
+function set(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
+
+function renderAll() {
+  const i = getInputs();
+  const m = computeModel(i);
+  const equityPct = Math.max(0, 1 - i.seniorPct - i.mezzPct);
+
+  // ── HEADER ──
+  set('hkpi-rev',    fmt(m.totalRev));
+  set('hkpi-ebitda', fmt(m.ebitda));
+  set('hkpi-dscr',   m.dscr.toFixed(2)+'×');
+  const dscrEl = document.getElementById('hkpi-dscr');
+  if(dscrEl) dscrEl.style.color = m.dscr < 1.25 ? '#f5c6ce' : m.dscr < 1.75 ? var_amber() : '#fff';
+  set('hkpi-ev',     fmt(m.totalValLow)+' – '+fmt(m.totalValHigh));
+
+  // ── TAB 1 ──
+  set('bp-clinical-rev', fmt(m.clinicalRev));
+  set('bp-coliving-rev', fmt(m.colivingRev));
+  set('bp-total-rev',    fmt(m.totalRev));
+
+  // ── TAB 2 ──
+  set('v-occ',  Math.round(i.occ*100)+'%');
+  set('v-rate', '$'+i.adr);
+  set('v-res',  Math.round(i.res*100)+'%');
+  set('v-rent', '$'+i.rent.toLocaleString());
+  set('math-clinical', Math.round(m.clinicalRev / i.adr / 365)+' avg daily census × $'+i.adr+'/day × 365 days = '+fmt(m.clinicalRev));
+  set('result-clinical', fmt(m.clinicalRev)+' annual clinical revenue');
+  set('result-coliving',  fmt(m.colivingRev)+' annual rental revenue');
+
+  // ── TAB 3 ──
+  set('exp-total-rev', fmt(m.totalRev));
+  set('exp-total-exp', fmt(m.totalExp - m.expDebtSvc)); // show operating expenses only (debt service shown separately)
+  set('exp-ebitda',    fmt(m.ebitda));
+  buildExpenseBars(m);
+
+  // ── TAB 4 ──
+  const marginPct = Math.round(m.margin*100);
+  set('profit-ebitda-badge',       fmt(m.ebitda)+' at Year 3');
+  set('profit-ebitda-margin-text', marginPct+'% margin');
+  set('profit-ebitda-desc',        fmt(m.ebitda)+' out of every '+fmt(m.totalRev)+' of revenue');
+  set('profit-fcf-badge',          fmt(m.fcf)+' at Year 3');
+  set('profit-dscr-badge',         m.dscr.toFixed(2)+'× at Year 3');
+  set('profit-dscr-val',           m.dscr.toFixed(2)+'×');
+  set('profit-dscr-card-label',    m.dscr.toFixed(2)+'× here');
+  set('profit-dscr-card-val',      m.dscr >= 2 ? 'Strong' : m.dscr >= 1.25 ? 'Acceptable' : 'Danger');
+  const pb = document.getElementById('profit-ebitda-bar');
+  if(pb) pb.style.width = Math.max(2,Math.min(100,marginPct))+'%';
+
+  const maxFCF = Math.max(Math.abs(m.y1FCF),Math.abs(m.y2FCF),Math.abs(m.fcf),1);
+  const y1p = Math.max(4,Math.min(100,(Math.max(0,m.y1FCF)/maxFCF)*100));
+  const y2p = Math.max(4,Math.min(100,(Math.max(0,m.y2FCF)/maxFCF)*100));
+  const y3p = 100;
+  set('profit-fcf-y1-num', fmt(m.y1FCF));
+  set('profit-fcf-y2-num', fmt(m.y2FCF));
+  set('profit-fcf-y3-num', fmt(m.fcf));
+  const b1=document.getElementById('profit-fcf-y1-bar'),b2=document.getElementById('profit-fcf-y2-bar'),b3=document.getElementById('profit-fcf-y3-bar');
+  if(b1)b1.style.height=y1p+'%'; if(b2)b2.style.height=y2p+'%'; if(b3)b3.style.height=y3p+'%';
+
+  // ── TAB 5 ──
+  const capPct = (i.cap*100).toFixed(1);
+  set('val-propco-formula','Value = NOI ÷ cap rate\n'+fmt(m.propcoNOI)+' ÷ '+capPct+'% = '+fmt(m.propcoVal)+'\n'+fmt(m.propcoNOI)+' ÷ 5.5% = '+fmt(m.propcoValHi));
+  set('val-cap1-label', capPct+'% cap rate');
+  set('val-propco-low',  fmt(m.propcoVal));
+  set('val-propco-high', fmt(m.propcoValHi));
+  set('val-opco-formula','Value = EBITDA × multiple\n'+fmt(m.opcoEBITDA)+' × 7 = '+fmt(m.opcoValLow)+'\n'+fmt(m.opcoEBITDA)+' × 9 = '+fmt(m.opcoValHigh));
+  set('val-opco-low',  fmt(m.opcoValLow));
+  set('val-opco-high', fmt(m.opcoValHigh));
+  set('val-total',     fmt(m.totalValLow)+' – '+fmt(m.totalValHigh));
+  set('val-equity-invested', fmt(m.equityAmt));
+  set('val-equity-pct',      Math.round(equityPct*100)+'% of total project cost');
+  set('val-net-equity', fmt(m.netEqLow)+' – '+fmt(m.netEqHigh));
+  set('val-em', m.emLow.toFixed(1)+'× – '+m.emHigh.toFixed(1)+'×');
+
+  // ── TAB 6: CAPITAL STACK ──
+  const sPct  = Math.round(i.seniorPct*100);
+  const mPct  = Math.round(i.mezzPct*100);
+  const ePct  = Math.round(equityPct*100);
+
+  set('cv-senior', sPct+'%');
+  set('cv-senior-amt', (m.seniorAmt/1e6).toFixed(1));
+  set('cv-mezz',   mPct+'%');
+  set('cv-mezz-amt', (m.mezzAmt/1e6).toFixed(1));
+  set('cv-equity-pct', ePct+'%');
+  set('cv-equity-amt', (m.equityAmt/1e6).toFixed(1));
+  set('cv-senior-rate', (i.seniorRate*100).toFixed(2)+'%');
+  set('cv-mezz-rate',   (i.mezzRate*100).toFixed(1)+'%');
+
+  // visual stack bar
+  const sl = document.getElementById('sl-senior');
+  const ml = document.getElementById('sl-mezz');
+  const el = document.getElementById('sl-equity');
+  if(sl){ sl.style.flex = sPct; set('sv-senior-pct',sPct+'%'); set('sv-senior-amt',fmt(m.seniorAmt)); }
+  if(ml){ ml.style.flex = Math.max(0,mPct); ml.style.minWidth = mPct>0?'60px':'0'; set('sv-mezz-pct',mPct+'%'); set('sv-mezz-amt',fmt(m.mezzAmt)); }
+  if(el){ el.style.flex = Math.max(0,ePct); set('sv-equity-pct',ePct+'%'); set('sv-equity-amt',fmt(m.equityAmt)); }
+
+  // debt service table
+  set('dst-senior-amt',  fmt(m.seniorAmt));
+  set('dst-senior-rate', (i.seniorRate*100).toFixed(2)+'%');
+  set('dst-senior-pmt',  fmt(m.seniorPmt));
+  set('dst-mezz-amt',    fmt(m.mezzAmt));
+  set('dst-mezz-rate',   (i.mezzRate*100).toFixed(1)+'%');
+  set('dst-mezz-pmt',    fmt(m.mezzPmt));
+  set('dst-total-debt',  fmt(m.seniorAmt+m.mezzAmt));
+  set('dst-total-pmt',   fmt(m.totalDebtSvc));
+
+  // impact metrics
+  set('cap-debtSvc', fmt(m.totalDebtSvc));
+  set('cap-dscr',    m.dscr.toFixed(2)+'×');
+  set('cap-fcf',     fmt(m.fcf));
+  set('cap-equity',  fmt(m.equityAmt));
+  set('cap-dscr-inline', m.dscr.toFixed(2)+'×');
+  const capWarn=document.getElementById('cap-warning'), capOk=document.getElementById('cap-ok');
+  if(capWarn&&capOk){ if(m.dscr<1.25||m.fcf<0){capWarn.style.display='block';capOk.style.display='none';}else{capWarn.style.display='none';capOk.style.display='block';} }
+
+  // ── TAB 7: SANDBOX ──
+  set('sv-occ',    Math.round(i.occ*100)+'%');
+  set('sv-adr',    '$'+i.adr);
+  set('sv-res',    Math.round(i.res*100)+'%');
+  set('sv-senior', sPct+'%');
+  set('sv-mezz',   mPct+'%');
+  set('sv-cap',    (i.cap*100).toFixed(1)+'%');
+  set('s-rev',     fmt(m.totalRev));
+  set('s-ebitda',  fmt(m.ebitda));
+  set('s-margin',  Math.round(m.margin*100)+'%');
+  set('s-fcf',     fmt(m.fcf));
+  set('s-dscr-val',m.dscr.toFixed(2)+'×');
+  set('s-debt-svc',fmt(m.totalDebtSvc));
+  set('s-propco',  fmt(m.propcoVal));
+  set('s-noi-note','Based on '+fmt(m.propcoNOI)+' NOI');
+  set('s-equity',  fmt(m.equityAmt));
+  set('s-equity-note', ePct+'% of $78.5M total cost');
+  set('s-dscr',    m.dscr.toFixed(2)+'×');
+
+  const fcfEl=document.getElementById('s-fcf');
+  if(fcfEl) fcfEl.style.color = m.fcf<0?'var(--crimson)':'var(--green)';
+
+  const warn=document.getElementById('s-warning'), ok=document.getElementById('s-ok');
+  if(warn&&ok){
+    if(m.fcf<0||m.dscr<1.25){warn.style.display='block';ok.style.display='none';}
+    else{warn.style.display='none';ok.style.display='block';}
+  }
+}
+
+function var_amber(){return '#F5C87A';}
+
+function buildExpenseBars(m) {
+  // All values come directly from computeModel — no recalculation here
+  const items = [
+    { label:'Clinical staffing — contracted clinicians (45% of clinical rev, fully variable)',    value:m.expClinStaff,    color:'#E24B4A', note:'Scales with occupancy & rate' },
+    { label:'Clinical overhead — supplies, EMR, malpractice insurance, clinical admin (20%)',     value:m.expClinOverhead, color:'#C8607A', note:'Scales with clinical revenue' },
+    { label:'Property operations — taxes, insurance, maintenance (fixed base + variable upkeep)', value:m.expPropOps,      color:'#378ADD', note:'Partially fixed' },
+    { label:'Wellness & platform operations — 35% of platform revenue',                           value:m.expPlatform,     color:'#639922', note:'Scales with platform activity' },
+    { label:'G&A, compliance, and technology — fixed base + clinical compliance',                 value:m.expGnA,          color:'#BA7517', note:'Mostly fixed' },
+    { label:'Marketing & member admissions — 2.5% of clinical revenue',                           value:m.expMarketing,    color:'#888',     note:'Scales with clinical revenue' },
+    { label:'Debt service — total annual loan payments (set by Capital Stack on Tab 6)',           value:m.expDebtSvc,      color:'#C8102E', note:'Fixed — changes with capital stack' },
+  ];
+  const total  = items.reduce((s,e)=>s+e.value, 0);
+  const container = document.getElementById('expense-bars');
+  if(!container) return;
+  container.innerHTML = items.map(e=>{
+    const pct = Math.round((e.value / total) * 100);
+    return `<div class="bar-block">
+      <div class="bar-header"><span>${e.label} <span style="font-style:italic;color:#bbb;">(${e.note})</span></span><strong>${fmt(e.value)}</strong></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${e.color};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ── SYNC HELPERS ─────────────────────────────────────────────────────────────
+function syncRevenueToSandbox() {
+  document.getElementById('s-occ').value  = document.getElementById('r-occ').value;
+  document.getElementById('s-adr').value  = document.getElementById('r-rate').value;
+  document.getElementById('s-res').value  = document.getElementById('r-res').value;
+}
+function syncSandboxToRevenue() {
+  document.getElementById('r-occ').value  = document.getElementById('s-occ').value;
+  document.getElementById('r-rate').value = document.getElementById('s-adr').value;
+  document.getElementById('r-res').value  = document.getElementById('s-res').value;
+}
+function syncCapitalToSandbox() {
+  document.getElementById('s-senior').value = document.getElementById('c-senior').value;
+  document.getElementById('s-mezz').value   = document.getElementById('c-mezz').value;
+}
+function syncSandboxToCapital() {
+  document.getElementById('c-senior').value = document.getElementById('s-senior').value;
+  document.getElementById('c-mezz').value   = document.getElementById('s-mezz').value;
+}
+
+function onRevenueSlider()  { syncRevenueToSandbox(); renderAll(); }
+function onCapitalSlider()  { syncCapitalToSandbox(); renderAll(); }
+function onSandboxSlider()  { syncSandboxToRevenue(); syncSandboxToCapital(); renderAll(); }
+
+function showTab(id, btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('visible'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('visible');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+renderAll();
+</script>
+</body>
+</html>
