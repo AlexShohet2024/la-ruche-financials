@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>La Ruche · Financial Model</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --serif: 'Playfair Display', Georgia, serif;
+      --sans: 'DM Sans', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', 'SF Mono', monospace;
+    }
+    body { font-family: var(--sans); background: #faf8f5; color: #1c1c1c; -webkit-font-smoothing: antialiased; }
+    input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; background: #e5e0d8; border-radius: 3px; outline: none; cursor: pointer; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #c8102e; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+    input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #c8102e; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-type="module">
+const { useState, useMemo } = React;
+const fmt = (n, d) => { d = d === undefined ? 1 : d; if (Math.abs(n) >= 1e6) return "$"+(n/1e6).toFixed(d)+"M"; if (Math.abs(n) >= 1e3) return "$"+(n/1e3).toFixed(0)+"K"; return "$"+n.toFixed(0); };
+const pctf = (n) => (n*100).toFixed(1)+"%";
+
+function Slider({label,value,onChange,min,max,step=1,suffix="",prefix="",sub}) {
+  return (<div style={{marginBottom:20}}>
+    <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+      <span style={{fontSize:13,color:"#8a8578",fontFamily:"var(--sans)",letterSpacing:0.3}}>{label}</span>
+      <span style={{fontSize:15,fontWeight:700,color:"#1c1c1c",fontFamily:"var(--mono)"}}>{prefix}{value}{suffix}</span>
+    </div>
+    <input type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))}/>
+    {sub&&<div style={{fontSize:11,color:"#a09a90",marginTop:4,fontFamily:"var(--sans)"}}>{sub}</div>}
+  </div>);
+}
+function StatCard({label,value,sub,accent,small}) {
+  return (<div style={{background:accent?"linear-gradient(135deg,#1c1c1c 0%,#2a2520 100%)":"#faf8f5",border:accent?"none":"1px solid #e5e0d8",borderRadius:10,padding:small?"14px 16px":"20px 24px",flex:1,minWidth:small?120:160}}>
+    <div style={{fontSize:small?11:12,color:accent?"#a09a90":"#8a8578",fontFamily:"var(--sans)",letterSpacing:0.5,textTransform:"uppercase",marginBottom:6}}>{label}</div>
+    <div style={{fontSize:small?20:28,fontWeight:700,color:accent?"#f5f0e8":"#1c1c1c",fontFamily:"var(--serif)",lineHeight:1.1}}>{value}</div>
+    {sub&&<div style={{fontSize:11,color:accent?"#8a8578":"#a09a90",marginTop:4,fontFamily:"var(--sans)"}}>{sub}</div>}
+  </div>);
+}
+function Section({title,children,sub}) {
+  return (<div style={{marginBottom:36}}>
+    {title&&<h3 style={{fontFamily:"var(--serif)",fontSize:22,fontWeight:400,color:"#1c1c1c",margin:"0 0 4px 0"}}>{title}</h3>}
+    {sub&&<p style={{fontSize:13,color:"#8a8578",margin:"0 0 16px 0",fontFamily:"var(--sans)",lineHeight:1.5}}>{sub}</p>}
+    {children}
+  </div>);
+}
+function RevBlock({icon,name,color,amount,sub,children}) {
+  return (<div style={{border:"1px solid #e5e0d8",borderRadius:10,padding:20,marginBottom:16,borderLeft:`4px solid ${color}`}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:children?16:0}}>
+      <div><div style={{fontSize:11,fontFamily:"var(--sans)",letterSpacing:1,textTransform:"uppercase",color:"#8a8578",marginBottom:4}}>{icon}</div><div style={{fontSize:17,fontFamily:"var(--serif)",color:"#1c1c1c",fontWeight:500}}>{name}</div></div>
+      <div style={{textAlign:"right"}}><div style={{fontSize:24,fontWeight:700,fontFamily:"var(--mono)",color:"#1c1c1c"}}>{amount}</div><div style={{fontSize:11,color:"#a09a90",fontFamily:"var(--sans)"}}>{sub}</div></div>
+    </div>{children}
+  </div>);
+}
+function Bar({label,value,max,color="#1c1c1c"}) {
+  const w=Math.min((value/max)*100,100);
+  return (<div style={{marginBottom:10}}>
+    <div style={{display:"flex",justifyContent:"space-between",fontSize:12,fontFamily:"var(--sans)",color:"#8a8578",marginBottom:4}}><span>{label}</span><span style={{fontFamily:"var(--mono)",color:"#1c1c1c"}}>{fmt(value)}</span></div>
+    <div style={{background:"#eee8df",borderRadius:4,height:8,overflow:"hidden"}}><div style={{width:`${w}%`,background:color,height:"100%",borderRadius:4,transition:"width 0.3s"}}/></div>
+  </div>);
+}
+function CapBar({senior,mezz,equity}) {
+  const t=senior+mezz+equity,sp=(senior/t)*100,mp=(mezz/t)*100;
+  return (<div style={{marginBottom:20}}><div style={{display:"flex",borderRadius:8,overflow:"hidden",height:40}}>
+    <div style={{width:`${sp}%`,background:"#1c1c1c",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontFamily:"var(--sans)",transition:"width 0.3s"}}>{sp>15?`Senior ${sp.toFixed(0)}%`:""}</div>
+    {mp>0&&<div style={{width:`${mp}%`,background:"#c8102e",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontFamily:"var(--sans)",transition:"width 0.3s"}}>{mp>8?`Mezz ${mp.toFixed(0)}%`:""}</div>}
+    <div style={{flex:1,background:"#d4c9b8",display:"flex",alignItems:"center",justifyContent:"center",color:"#1c1c1c",fontSize:11,fontFamily:"var(--sans)"}}>{`Equity ${(100-sp-mp).toFixed(0)}%`}</div>
+  </div></div>);
+}
+function DSCRGauge({value}) {
+  const color=value<1?"#c8102e":value<1.25?"#d4820a":"#2d6a30";
+  const label=value<1?"Danger":value<1.25?"Below minimum":"Passes";
+  return (<div style={{textAlign:"center",padding:20}}>
+    <div style={{fontSize:56,fontWeight:700,fontFamily:"var(--mono)",color,lineHeight:1}}>{value.toFixed(2)+"\u00d7"}</div>
+    <div style={{fontSize:13,color,fontFamily:"var(--sans)",marginTop:8,fontWeight:600}}>{label}</div>
+    <div style={{fontSize:11,color:"#a09a90",fontFamily:"var(--sans)",marginTop:4}}>Banks require minimum 1.25×</div>
+  </div>);
+}
+function InfoBox({children,warn}) {
+  return (<div style={{background:warn?"#fef3f0":"#f5f3ee",border:`1px solid ${warn?"#e8c0b8":"#e5e0d8"}`,borderRadius:8,padding:16,marginTop:16,fontSize:13,fontFamily:"var(--sans)",color:warn?"#8b2010":"#6b6560",lineHeight:1.6}}>{children}</div>);
+}
+function FCFChart({y1,y2,y3}) {
+  const mx=Math.max(Math.abs(y1),Math.abs(y2),Math.abs(y3),1),sc=120/mx;
+  const b=(v,yr)=>{const h=Math.abs(v)*sc,neg=v<0;return(<div key={yr} style={{display:"flex",flexDirection:"column",alignItems:"center",flex:1}}>
+    <div style={{height:140,display:"flex",flexDirection:"column",justifyContent:"flex-end",alignItems:"center",position:"relative"}}>
+      {neg&&<div style={{position:"absolute",bottom:0,width:48,height:h,background:"#c8102e",borderRadius:"4px 4px 0 0",opacity:0.8,transform:"translateY(100%)"}}/>}
+      {!neg&&<div style={{width:48,height:h,background:"#2d6a30",borderRadius:"4px 4px 0 0",opacity:0.8}}/>}
+    </div>
+    <div style={{borderTop:"2px solid #d4c9b8",width:60}}/><div style={{fontSize:14,fontFamily:"var(--mono)",fontWeight:700,color:neg?"#c8102e":"#1c1c1c",marginTop:8}}>{fmt(v)}</div><div style={{fontSize:11,color:"#8a8578",fontFamily:"var(--sans)"}}>Year {yr}</div>
+  </div>);};
+  return <div style={{display:"flex",gap:12,justifyContent:"center",padding:"20px 0"}}>{b(y1,1)}{b(y2,2)}{b(y3,3)}</div>;
+}
+
+const TABS=[{id:0,n:"1",l:"The Big Picture"},{id:1,n:"2",l:"How Money Comes In"},{id:2,n:"3",l:"Where It Goes"},{id:3,n:"4",l:"What\u2019s Left Over"},{id:4,n:"5",l:"What It\u2019s Worth"},{id:5,n:"6",l:"Capital Stack"},{id:6,n:"7",l:"Play With It"}];
+const LB=<span style={{fontSize:9,background:"#c8102e",color:"#fff",borderRadius:3,padding:"2px 5px",fontFamily:"var(--sans)",letterSpacing:0.5,verticalAlign:"middle",marginLeft:6}}>LIVE</span>;
+
+function App() {
+  const [tab,setTab]=useState(0);
+  const [clinOcc,setClinOcc]=useState(100);
+  const [adr,setAdr]=useState(750);
+  const [resOcc,setResOcc]=useState(100);
+  const rent=3438;
+  const [seniorPct,setSeniorPct]=useState(63);
+  const [mezzPct,setMezzPct]=useState(0);
+  const [seniorRate,setSeniorRate]=useState(6.5);
+  const [mezzRate,setMezzRate]=useState(12.0);
+  const [capRate,setCapRate]=useState(6.0);
+
+  const m=useMemo(()=>{
+    const tc=78.5e6,sa=tc*seniorPct/100,ma=tc*mezzPct/100,ep=Math.max(0,100-seniorPct-mezzPct),ea=tc*ep/100;
+    const cr=68*(clinOcc/100)*adr*365,rr=80*(resOcc/100)*rent*12,wr=4e6,sr=3.9e6;
+    const tr=cr+rr+wr+sr,nc=rr+wr+sr;
+    const fc=6.5e6,cv=cr*0.55,nv=nc*0.15,ox=fc+cv+nv,eb=tr-ox,em=tr>0?eb/tr:0;
+    const pr=rr+5.7e6,noi=pr-2e6;
+    const r=seniorRate/100/12,n=300;
+    const san=r>0&&sa>0?sa*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1)*12:0;
+    const man=ma*mezzRate/100,td=san+man;
+    const dscr=td>0?eb/td:99,fcf3=eb-td;
+    const y1r=nc,y1o=fc+nc*0.15,fcf1=y1r-y1o-td;
+    const y2c=cr*0.65,y2r=y2c+nc,y2o=fc+y2c*0.55+nc*0.15,fcf2=y2r-y2o-td;
+    const pv=capRate>0?noi/(capRate/100):0,pvl=noi/0.06,pvh=noi/0.055;
+    const oe=cr*0.45+sr*0.25,ovl=oe*7,ovh=oe*9;
+    const evl=pvl+ovl,evh=pvh+ovh;
+    let bal=sa;const mr=seniorRate/100/12;
+    const mp=sa>0&&mr>0?sa*(mr*Math.pow(1+mr,n))/(Math.pow(1+mr,n)-1):0;
+    for(let i=0;i<84;i++){bal-=mp-bal*mr;}
+    const rd=Math.max(0,bal)+ma,nel=evl-rd,neh=evh-rd;
+    const eml=ea>0?nel/ea:0,emh=ea>0?neh/ea:0;
+    return{tc,sa,ma,ep,ea,cr,rr,wr,sr,tr,nc,ox,eb,em,noi,pr,san,man,td,dscr,fcf1,fcf2,fcf3,pv,pvl,pvh,oe,ovl,ovh,evl,evh,rd,nel,neh,eml,emh};
+  },[clinOcc,adr,resOcc,rent,seniorPct,mezzPct,seniorRate,mezzRate,capRate]);
+
+  const setMC=v=>{if(v+seniorPct<=95)setMezzPct(v);};
+  const setSC=v=>{if(v+mezzPct<=95)setSeniorPct(v);};
+
+  const T0=()=>(<div>
+    <Section title="The Future of Living, Working, and Healing" sub="La Ruche is a premium, integrated living environment that brings together housing, behavioral health, wellness, and work into a single, purpose-built ecosystem in West Hollywood."/>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:12,marginBottom:28}}>
+      <RevBlock icon="HEAL" name="Treatment Clinic" color="#c8102e" amount={fmt(m.cr)} sub="per year at full capacity"><div style={{fontSize:12,color:"#6b6560",fontFamily:"var(--sans)",lineHeight:1.5}}>Up to 200 community members use insurance or pay privately for therapy, detox, and mental health programs.</div></RevBlock>
+      <RevBlock icon="LIVE" name="Co-Living Apartments" color="#8b7355" amount={fmt(m.rr)} sub="per year at full occupancy"><div style={{fontSize:12,color:"#6b6560",fontFamily:"var(--sans)",lineHeight:1.5}}>80 residents pay monthly rent for furnished, wellness-focused suites in West Hollywood.</div></RevBlock>
+      <RevBlock icon="WORK" name="Wellness Mall" color="#5a7a5a" amount={fmt(m.wr)} sub="per year at stabilization"><div style={{fontSize:12,color:"#6b6560",fontFamily:"var(--sans)",lineHeight:1.5}}>Therapists, doctors, and wellness providers rent clinical office space by the hour or month.</div></RevBlock>
+      <RevBlock icon="PLAY" name="Rooftop Social Club" color="#4a6a8a" amount={fmt(m.sr)} sub="per year at full membership"><div style={{fontSize:12,color:"#6b6560",fontFamily:"var(--sans)",lineHeight:1.5}}>Members pay $2K–$10K/year for a rooftop pool, restaurant, events, and sober nightlife.</div></RevBlock>
+    </div>
+    <div style={{background:"#1c1c1c",borderRadius:12,padding:28,textAlign:"center",marginBottom:28}}>
+      <div style={{fontSize:12,color:"#a09a90",fontFamily:"var(--sans)",letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Year 3 Stabilized — Total Annual Revenue {LB}</div>
+      <div style={{fontSize:48,fontWeight:700,color:"#f5f0e8",fontFamily:"var(--serif)"}}>{fmt(m.tr)}</div>
+    </div>
+    <Section title="Why build all four at once?"><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:16}}>
+      {[{t:"Lower cost to acquire customers",d:"A treatment member becomes a co-living resident becomes a club member. You only paid to find them once."},{t:"Better outcomes = better business",d:"When members live and socialize in the same ecosystem, recovery rates improve."},{t:"If one stream slows, others don't",d:"An insurance cut doesn't affect apartment rents. Diversification protects the whole."}].map((x,i)=>(<div key={i} style={{background:"#f5f3ee",borderRadius:8,padding:16}}><div style={{fontSize:14,fontFamily:"var(--serif)",fontWeight:600,marginBottom:8}}>{x.t}</div><div style={{fontSize:12,color:"#6b6560",fontFamily:"var(--sans)",lineHeight:1.5}}>{x.d}</div></div>))}
+    </div></Section>
+  </div>);
+
+  const T1=()=>(<div>
+    <Section title="How Money Comes In" sub="Every number starts with a simple assumption: how many people, paying how much. Use the sliders — changes update every tab instantly."/>
+    <RevBlock icon="HEAL" name="Treatment Clinic — the biggest revenue driver" color="#c8102e" amount={fmt(m.cr)} sub={`${((m.cr/m.tr)*100).toFixed(0)}% of total`}>
+      <div style={{fontSize:12,color:"#6b6560",fontFamily:"var(--sans)",lineHeight:1.6,marginBottom:16}}>Think of it like a hotel, except each "guest" is a member paying $500–$1,200 per day — mostly from health insurance.</div>
+      <Slider label="Clinical occupancy rate" value={clinOcc} onChange={setClinOcc} min={0} max={100} suffix="%" sub="200 max clients"/>
+      <Slider label="Average daily rate per member" value={adr} onChange={setAdr} min={400} max={1200} step={25} prefix="$" sub="$400–$1,200"/>
+      <InfoBox>{`The math: ${(68*clinOcc/100).toFixed(0)} avg daily census × $${adr}/day × 365 days = ${fmt(68*(clinOcc/100)*adr*365)}`}</InfoBox>
+    </RevBlock>
+    <RevBlock icon="LIVE" name="Co-Living Apartments" color="#8b7355" amount={fmt(m.rr)} sub="annual rental revenue">
+      <div style={{fontSize:12,color:"#6b6560",fontFamily:"var(--sans)",lineHeight:1.6,marginBottom:16}}>80 furnished rooms in a premium building. WeHo average for high-end furnished: $3,000–$4,000/month.</div>
+      <Slider label="Residential occupancy rate" value={resOcc} onChange={setResOcc} min={0} max={100} suffix="%"/>
+    </RevBlock>
+    <RevBlock icon="WORK" name="Wellness Mall" color="#5a7a5a" amount={fmt(m.wr)} sub="at Year 3 stabilization (fixed)"><div style={{fontSize:12,color:"#6b6560",fontFamily:"var(--sans)",lineHeight:1.6}}>25,000 sq ft of clinical offices, therapy rooms, cafe, gym, and longevity suites. $160/sq ft/year.</div></RevBlock>
+    <RevBlock icon="PLAY" name="Rooftop Social Club" color="#4a6a8a" amount={fmt(m.sr)} sub="at full membership (fixed)"><div style={{fontSize:12,color:"#6b6560",fontFamily:"var(--sans)",lineHeight:1.6}}>12,000–15,000 sq ft rooftop. ~500 members at ~$5,000/year average, plus 35% F&B.</div></RevBlock>
+  </div>);
+
+  const T2=()=>(<div>
+    <Section title="Where the Money Goes" sub="Clinical costs scale with occupancy. Debt service is fixed by the capital stack."/>
+    <div style={{background:"#f5f3ee",borderRadius:12,padding:24,marginBottom:24}}>
+      <div style={{fontSize:12,fontFamily:"var(--sans)",color:"#8a8578",marginBottom:16,letterSpacing:0.5,textTransform:"uppercase"}}>Expense Breakdown — Year 3 {LB}</div>
+      <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:20}}>
+        <StatCard label="Total Revenue" value={fmt(m.tr)} small/><span style={{fontSize:24,color:"#a09a90",fontFamily:"var(--serif)"}}>−</span>
+        <StatCard label="Operating Expenses" value={fmt(m.ox)} small/><span style={{fontSize:24,color:"#a09a90",fontFamily:"var(--serif)"}}>=</span>
+        <StatCard label="EBITDA" value={fmt(m.eb)} accent small/>
+      </div>
+      <Bar label="Clinical variable costs" value={m.cr*0.55} max={m.tr} color="#c8102e"/>
+      <Bar label="Fixed operating costs" value={6.5e6} max={m.tr} color="#1c1c1c"/>
+      <Bar label="Non-clinical variable" value={m.nc*0.15} max={m.tr} color="#8b7355"/>
+    </div>
+    <InfoBox>Clinicians are contracted per member, not salaried. At 50% capacity, staffing costs drop ~50%.</InfoBox>
+    <InfoBox>{`Debt service is fixed at ${fmt(m.td)} regardless of revenue.`}</InfoBox>
+  </div>);
+
+  const T3=()=>(<div>
+    <Section title="What's Actually Left Over" sub="All numbers update live from any slider."/>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16,marginBottom:24}}>
+      <div style={{border:"1px solid #e5e0d8",borderRadius:10,padding:20}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}><div style={{fontSize:14,fontFamily:"var(--serif)",fontWeight:600}}>EBITDA</div><div style={{fontSize:24,fontFamily:"var(--mono)",fontWeight:700}}>{fmt(m.eb)}</div></div>
+        <div style={{fontSize:11,color:"#8a8578",margin:"8px 0"}}>Earnings Before Interest, Taxes, Depreciation and Amortization</div>
+        <div style={{background:"#f5f3ee",borderRadius:6,padding:"8px 12px"}}><div style={{fontSize:18,fontFamily:"var(--mono)",fontWeight:700}}>{pctf(m.em)}</div><div style={{fontSize:10,color:"#8a8578"}}>margin</div></div>
+      </div>
+      <div style={{border:"1px solid #e5e0d8",borderRadius:10,padding:20}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}><div style={{fontSize:14,fontFamily:"var(--serif)",fontWeight:600}}>NOI</div><div style={{fontSize:24,fontFamily:"var(--mono)",fontWeight:700}}>{fmt(m.noi)}</div></div>
+        <div style={{fontSize:11,color:"#8a8578",margin:"8px 0"}}>Net Operating Income (PropCo only)</div>
+        <div style={{background:"#f5f3ee",borderRadius:6,padding:"8px 12px"}}><div style={{fontSize:18,fontFamily:"var(--mono)",fontWeight:700}}>{m.pr>0?pctf(m.noi/m.pr):"—"}</div><div style={{fontSize:10,color:"#8a8578"}}>margin on {fmt(m.pr)} in rents</div></div>
+      </div>
+    </div>
+    <Section title="Free Cash Flow"><FCFChart y1={m.fcf1} y2={m.fcf2} y3={m.fcf3}/></Section>
+    <Section title="DSCR — Debt Service Coverage Ratio"><DSCRGauge value={m.dscr}/></Section>
+  </div>);
+
+  const T4=()=>(<div>
+    <Section title="What the Whole Thing Is Worth" sub="Two separate layers: real estate (PropCo) and operating businesses (OpCo)."/>
+    <div style={{border:"1px solid #e5e0d8",borderRadius:10,padding:20,marginBottom:16}}>
+      <div style={{fontSize:16,fontFamily:"var(--serif)",fontWeight:600,marginBottom:12}}>Layer 1 — The Real Estate (PropCo)</div>
+      <div style={{fontSize:12,color:"#6b6560",fontFamily:"var(--sans)",marginBottom:16}}>Value = NOI ÷ cap rate</div>
+      <div style={{display:"flex",gap:12,flexWrap:"wrap"}}><StatCard label="6.0% cap rate" value={fmt(m.pvl)} small/><StatCard label="5.5% cap rate" value={fmt(m.pvh)} small/></div>
+    </div>
+    <div style={{border:"1px solid #e5e0d8",borderRadius:10,padding:20,marginBottom:16}}>
+      <div style={{fontSize:16,fontFamily:"var(--serif)",fontWeight:600,marginBottom:12}}>Layer 2 — Operating Businesses (OpCo)</div>
+      <div style={{fontSize:12,color:"#6b6560",fontFamily:"var(--sans)",marginBottom:16}}>Value = EBITDA × multiple. OpCo EBITDA: {fmt(m.oe)}</div>
+      <div style={{display:"flex",gap:12,flexWrap:"wrap"}}><StatCard label="7× multiple" value={fmt(m.ovl)} small/><StatCard label="9× multiple" value={fmt(m.ovh)} small/></div>
+    </div>
+    <div style={{background:"#1c1c1c",borderRadius:12,padding:28,textAlign:"center",marginBottom:24}}>
+      <div style={{fontSize:12,color:"#a09a90",letterSpacing:1,textTransform:"uppercase",marginBottom:12}}>Combined Enterprise Value {LB}</div>
+      <div style={{fontSize:40,fontWeight:700,color:"#f5f0e8",fontFamily:"var(--serif)"}}>{fmt(m.evl)} – {fmt(m.evh)}</div>
+      <div style={{fontSize:11,color:"#8a8578",marginTop:8}}>on a total investment of $78.5M</div>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
+      <StatCard label="Equity invested" value={fmt(m.ea)} sub={`${m.ep.toFixed(0)}% of project`} small/>
+      <StatCard label="Net equity at exit" value={`${fmt(m.nel)} – ${fmt(m.neh)}`} sub="Year 7, after debt" small/>
+      <StatCard label="Equity multiple" value={`${m.eml.toFixed(1)}× – ${m.emh.toFixed(1)}×`} accent small/>
+    </div>
+  </div>);
+
+  const T5=()=>(<div>
+    <Section title="Capital Stack" sub="How the $78.5M total project cost is financed."/>
+    <CapBar senior={m.sa} mezz={m.ma} equity={m.ea}/>
+    <Slider label="Senior debt (%)" value={seniorPct} onChange={setSC} min={0} max={80} suffix="%" sub={fmt(m.sa)}/>
+    <Slider label="Mezzanine (%)" value={mezzPct} onChange={setMC} min={0} max={30} suffix="%" sub={fmt(m.ma)}/>
+    <div style={{background:"#f5f3ee",borderRadius:8,padding:14,marginBottom:20}}>
+      <div style={{fontSize:12,color:"#8a8578"}}>Common equity (auto-calculated)</div>
+      <div style={{fontSize:18,fontFamily:"var(--mono)",fontWeight:700}}>{m.ep.toFixed(0)}% — {fmt(m.ea)} to raise</div>
+    </div>
+    <Slider label="Senior interest rate" value={seniorRate} onChange={setSeniorRate} min={4} max={10} step={0.25} suffix="%" sub="25-yr amortization"/>
+    <Slider label="Mezzanine rate" value={mezzRate} onChange={setMezzRate} min={8} max={18} step={0.5} suffix="%" sub="interest-only"/>
+    <div style={{border:"1px solid #e5e0d8",borderRadius:10,padding:16,marginBottom:20}}>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:13,fontFamily:"var(--sans)"}}>
+        <thead><tr style={{borderBottom:"2px solid #e5e0d8"}}>{["Layer","Amount","Rate","Annual","Type"].map(h=><th key={h} style={{textAlign:"left",padding:"8px 6px",color:"#8a8578",fontWeight:500,fontSize:11}}>{h}</th>)}</tr></thead>
+        <tbody>
+          <tr style={{borderBottom:"1px solid #f0ece5"}}><td style={{padding:"8px 6px"}}>Senior</td><td style={{fontFamily:"var(--mono)"}}>{fmt(m.sa)}</td><td>{seniorRate}%</td><td style={{fontFamily:"var(--mono)",fontWeight:700}}>{fmt(m.san)}</td><td>Amortizing</td></tr>
+          <tr style={{borderBottom:"1px solid #f0ece5"}}><td style={{padding:"8px 6px"}}>Mezz</td><td style={{fontFamily:"var(--mono)"}}>{fmt(m.ma)}</td><td>{mezzRate}%</td><td style={{fontFamily:"var(--mono)",fontWeight:700}}>{fmt(m.man)}</td><td>Interest-only</td></tr>
+          <tr style={{fontWeight:700}}><td style={{padding:"8px 6px"}}>Total</td><td style={{fontFamily:"var(--mono)"}}>{fmt(m.sa+m.ma)}</td><td>—</td><td style={{fontFamily:"var(--mono)"}}>{fmt(m.td)}</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12,marginBottom:20}}>
+      <StatCard label="Debt Service" value={fmt(m.td)} sub="per year" small/>
+      <StatCard label="DSCR (Yr 3)" value={`${m.dscr.toFixed(2)}×`} small/>
+      <StatCard label="Free Cash Flow" value={fmt(m.fcf3)} small/>
+      <StatCard label="Equity to Raise" value={fmt(m.ea)} accent small/>
+    </div>
+    {m.dscr<1.25?<InfoBox warn>DSCR below 1.25×. Would not qualify for standard commercial loan.</InfoBox>:<InfoBox>DSCR is <strong>{m.dscr.toFixed(2)}×</strong> — passes lender requirements.</InfoBox>}
+  </div>);
+
+  const T6=()=>(<div>
+    <Section title="Play With the Assumptions" sub="Move any slider — every number on every tab updates instantly."/>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:20,marginBottom:24}}>
+      <div style={{border:"1px solid #e5e0d8",borderRadius:10,padding:20}}>
+        <div style={{fontSize:14,fontFamily:"var(--serif)",fontWeight:600,marginBottom:16}}>Revenue Assumptions</div>
+        <Slider label="Clinical occupancy" value={clinOcc} onChange={setClinOcc} min={0} max={100} suffix="%"/>
+        <Slider label="Avg daily rate" value={adr} onChange={setAdr} min={400} max={1200} step={25} prefix="$"/>
+        <Slider label="Residential occupancy" value={resOcc} onChange={setResOcc} min={0} max={100} suffix="%"/>
+      </div>
+      <div style={{border:"1px solid #e5e0d8",borderRadius:10,padding:20}}>
+        <div style={{fontSize:14,fontFamily:"var(--serif)",fontWeight:600,marginBottom:16}}>Capital & Valuation</div>
+        <Slider label="Senior LTC %" value={seniorPct} onChange={setSC} min={0} max={80} suffix="%"/>
+        <Slider label="Mezzanine %" value={mezzPct} onChange={setMC} min={0} max={30} suffix="%"/>
+        <Slider label="Cap rate (exit)" value={capRate} onChange={setCapRate} min={4} max={8} step={0.25} suffix="%"/>
+      </div>
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:24}}>
+      <StatCard label="Total Revenue" value={fmt(m.tr)} small/>
+      <StatCard label="EBITDA" value={fmt(m.eb)} small/>
+      <StatCard label="EBITDA Margin" value={pctf(m.em)} small/>
+      <StatCard label="Free Cash Flow" value={fmt(m.fcf3)} small/>
+      <StatCard label="DSCR" value={`${m.dscr.toFixed(2)}×`} small/>
+      <StatCard label="Debt Service" value={fmt(m.td)} small/>
+      <StatCard label="PropCo Value" value={fmt(m.pv)} sub={`Based on ${fmt(m.noi)} NOI`} small/>
+      <StatCard label="Equity to Raise" value={fmt(m.ea)} sub={`${m.ep.toFixed(0)}% of $78.5M`} accent small/>
+    </div>
+    {m.dscr<1.25||m.fcf3<0?<InfoBox warn>{m.fcf3<0?"Free cash flow goes negative":"DSCR falls below 1.25×"}. The loan cannot be covered.</InfoBox>:<InfoBox>DSCR is <strong>{m.dscr.toFixed(2)}×</strong> — loan payments are comfortably covered.</InfoBox>}
+    <Section title="The Four Assumptions That Matter Most" sub="Drag any of these down and watch what breaks first.">
+      {[{n:"1",t:"Clinical occupancy",d:"63% of total revenue. Below 70%, free cash flow turns negative."},{n:"2",t:"Average daily rate",d:"A drop from $750 to $500/day wipes out ~$6.25M in clinical revenue."},{n:"3",t:"Mezzanine debt cost",d:"$10M of mezz at 12% adds $1.2M in fixed annual payments."},{n:"4",t:"Time to stabilization",d:"Every month of delay costs ~$500K in revenue while loan payments run."}].map((x,i)=>(<div key={i} style={{display:"flex",gap:14,marginBottom:14,padding:14,background:"#f5f3ee",borderRadius:8}}>
+        <div style={{width:32,height:32,background:"#1c1c1c",color:"#f5f0e8",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontFamily:"var(--serif)",flexShrink:0}}>{x.n}</div>
+        <div><div style={{fontSize:14,fontFamily:"var(--serif)",fontWeight:600,marginBottom:4}}>{x.t}</div><div style={{fontSize:12,color:"#6b6560",fontFamily:"var(--sans)",lineHeight:1.5}}>{x.d}</div></div>
+      </div>))}
+    </Section>
+  </div>);
+
+  const tabs={0:T0,1:T1,2:T2,3:T3,4:T4,5:T5,6:T6};
+  const TabContent=tabs[tab]||T0;
+
+  return (<div>
+    <div style={{background:"linear-gradient(135deg,#1c1c1c 0%,#2a2520 100%)",padding:"32px 24px 28px",textAlign:"center"}}>
+      <div style={{fontSize:10,letterSpacing:4,color:"#8a8578",textTransform:"uppercase",marginBottom:8}}>LA RUCHE</div>
+      <div style={{fontSize:28,fontFamily:"var(--serif)",color:"#f5f0e8",fontWeight:400,marginBottom:20}}>Financial Model</div>
+      <div style={{display:"flex",justifyContent:"center",gap:12,flexWrap:"wrap"}}>
+        <StatCard label="Annual Revenue" value={fmt(m.tr)} accent small/>
+        <StatCard label="EBITDA (Year 3)" value={fmt(m.eb)} accent small/>
+        <StatCard label="DSCR" value={`${m.dscr.toFixed(2)}×`} accent small/>
+        <StatCard label="Enterprise Value" value={`${fmt(m.evl)} – ${fmt(m.evh)}`} accent small/>
+      </div>
+    </div>
+    <div style={{display:"flex",overflowX:"auto",borderBottom:"1px solid #e5e0d8",background:"#fff",position:"sticky",top:0,zIndex:10}}>
+      {TABS.map(t=>(<button key={t.id} onClick={()=>setTab(t.id)} style={{border:"none",background:tab===t.id?"#faf8f5":"transparent",borderBottom:tab===t.id?"2px solid #c8102e":"2px solid transparent",padding:"12px 16px",cursor:"pointer",whiteSpace:"nowrap",fontFamily:"var(--sans)",fontSize:12,color:tab===t.id?"#1c1c1c":"#8a8578",fontWeight:tab===t.id?700:400,transition:"all 0.2s"}}>
+        <span style={{color:"#c8102e",marginRight:4,fontFamily:"var(--mono)",fontSize:11}}>{t.n}</span>{t.l}
+      </button>))}
+    </div>
+    <div style={{maxWidth:720,margin:"0 auto",padding:"28px 20px 60px"}}><TabContent/></div>
+    <div style={{textAlign:"center",padding:"20px 24px 32px",borderTop:"1px solid #e5e0d8"}}>
+      <div style={{fontSize:11,color:"#a09a90"}}>La Ruche · Financial Model · West Hollywood, California</div>
+      <div style={{fontSize:10,color:"#c4bfb5",marginTop:4}}>For discussion purposes only. Not investment advice.</div>
+    </div>
+  </div>);
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
